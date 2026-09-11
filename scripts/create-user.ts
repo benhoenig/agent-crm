@@ -45,14 +45,18 @@ async function main() {
     advanced: { database: { generateId: "uuid" } },
   });
 
-  await auth.api.signUpEmail({ body: { email, password, name } });
+  const created = await auth.api.signUpEmail({ body: { email, password, name } });
+  // Update by the id sign-up handed back, NOT by the email as typed: Better
+  // Auth lowercases emails on the way in, so a mixed-case argument matched
+  // nothing here and the account was left as the default role with no error
+  // (2026-09-11, Juedjuedjued@yahoo.com landed as "sales").
   const [user] = await db
     .update(schema.users)
     .set({ role, emailVerified: true })
-    .where(eq(schema.users.email, email))
-    .returning({ id: schema.users.id });
+    .where(eq(schema.users.id, created.user.id))
+    .returning({ id: schema.users.id, email: schema.users.email });
 
-  console.log(`Created ${role} user ${email} (${user.id})`);
+  console.log(`Created ${role} user ${user.email} (${user.id})`);
 }
 
 main().then(() => process.exit(0));
