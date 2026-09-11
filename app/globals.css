@@ -1,0 +1,215 @@
+@import "tailwindcss";
+
+/* ── HABIHUB design tokens ─────────────────────────────────────────────
+   Source of truth for every color in the app. Components NEVER hard-code
+   hex values — use the token utilities (bg-surface, text-accent, …).
+   Dark is the default theme (per the reference design); light is a full
+   counterpart, toggled via <html data-theme="light">.                   */
+
+:root {
+  /* canvas & surfaces (green-tinted near-blacks) */
+  --bg: #0b0d0b;
+  --surface: #131614;
+  --surface-2: #1a1e1b;
+  --surface-3: #232825;
+  --line: #262b27;
+  --line-strong: #343a35;
+  /* Sheet-grid row hover. TRANSLUCENT on purpose: SheetTable paints it as an
+     inset shadow OVER the cell's own conditional fill, so an opaque colour
+     would erase the fill at the exact moment the cursor is on it. */
+  --surface-hover: rgba(198, 242, 78, 0.06);
+
+  /* ink */
+  --ink: #f2f5f0;
+  --ink-2: #a7b0a8;
+  --ink-3: #6e766f;
+
+  /* the lime signature — use sparingly: active nav, primary CTA, live stats */
+  --accent: #c6f24e;
+  --accent-hover: #d4f876;
+  --accent-ink: #131909;      /* text placed ON accent fills */
+  --accent-text: #c6f24e;     /* accent-colored text on surfaces */
+  --accent-soft: rgba(198, 242, 78, 0.12);
+
+  /* semantic */
+  --good: #57d97a;
+  --warn: #f2c14e;
+  --bad: #f26d6d;
+  --info: #6db1f2;
+  --good-soft: rgba(87, 217, 122, 0.14);
+  --warn-soft: rgba(242, 193, 78, 0.14);
+  --bad-soft: rgba(242, 109, 109, 0.14);
+  --info-soft: rgba(109, 177, 242, 0.14);
+
+  /* charts (green-family series, then contrast hues) */
+  --chart-1: #c6f24e;
+  --chart-2: #57d97a;
+  --chart-3: #2e9e5b;
+  --chart-4: #dff7a1;
+  --chart-5: #6db1f2;
+  --chart-6: #f2c14e;
+
+  /* elevation & glow */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --glow-accent: 0 0 24px rgba(198, 242, 78, 0.25);
+}
+
+[data-theme="light"] {
+  --bg: #eef1ea;
+  --surface: #ffffff;
+  --surface-2: #f7f9f4;
+  --surface-3: #edf1e8;
+  --line: #dde3d8;
+  --line-strong: #c8d0c2;
+  --surface-hover: rgba(85, 112, 10, 0.05);
+
+  --ink: #171b16;
+  --ink-2: #4c544c;
+  --ink-3: #8a938a;
+
+  --accent: #b8e43c;
+  --accent-hover: #a8d62e;
+  --accent-ink: #131909;
+  --accent-text: #55700a;    /* lime is illegible as text on white — olive stands in */
+  --accent-soft: rgba(146, 189, 28, 0.16);
+
+  --good: #2f9e57;
+  --warn: #b98a1d;
+  --bad: #cc4747;
+  --info: #2f74b9;
+  --good-soft: rgba(47, 158, 87, 0.12);
+  --warn-soft: rgba(185, 138, 29, 0.14);
+  --bad-soft: rgba(204, 71, 71, 0.12);
+  --info-soft: rgba(47, 116, 185, 0.12);
+
+  --chart-1: #92bd1c;
+  --chart-2: #2f9e57;
+  --chart-3: #1c6b3c;
+  --chart-4: #c6dd7a;
+  --chart-5: #2f74b9;
+  --chart-6: #b98a1d;
+
+  --shadow-card: 0 1px 3px rgba(23, 27, 22, 0.08);
+  --glow-accent: 0 0 24px rgba(146, 189, 28, 0.2);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-surface-hover: var(--surface-hover);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-info: var(--info);
+  --color-good-soft: var(--good-soft);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad-soft: var(--bad-soft);
+  --color-info-soft: var(--info-soft);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+
+  --font-sans: var(--font-thai), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-plex), ui-monospace, monospace;
+
+  --radius-card: 1rem;      /* cards & panels — the reference's soft geometry */
+  --radius-ctl: 0.625rem;   /* buttons, inputs */
+
+  --shadow-card: var(--shadow-card);
+  --shadow-glow: var(--glow-accent);
+}
+
+/* ── base ── */
+html {
+  color-scheme: dark;
+}
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  /* next/font variables live on <body>, so reference them directly —
+     `--font-sans` from @theme inline is not emitted as a real CSS var. */
+  font-family: var(--font-thai), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* every numeral in the app: mono + tabular so columns of prices align */
+.num {
+  font-family: var(--font-mono-plex), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* ── row-layout forms (components/ui FieldRows) ─────────────────────────
+   Ben, 2026-08-29: "field box is a little too big.. so it took more space on
+   our modal". A listing has 42 of them stacked, so 6px off each control is
+   ~250px off the form.
+
+   ONE RULE RATHER THAN A PROP. The alternative was a `compact` flag on
+   Input/Select/Textarea threaded through 58 call sites in ListingForm and
+   LeadForm, which every field added from here on would have to remember.
+   Scoped to .field-rows, so the default control chrome — used on twenty
+   other surfaces — is untouched. */
+.field-rows :is(input:not([type="checkbox"]), select, textarea) {
+  padding-block: 0.3125rem; /* 32px tall, against py-2's 38px */
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+* {
+  border-color: var(--line);
+}
+
+/* focus visible — accent ring, never the browser default */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* thin scrollbars that match the surface system */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/* ── planner (ported from the Klaichan/Mook planner) ────────────────── */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-4vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(104vh) rotate(560deg); opacity: 0.7; }
+}
+@keyframes celebrate-pop {
+  0% { transform: translate(-50%, 8px) scale(0.92); opacity: 0; }
+  10% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  85% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -6px) scale(0.97); opacity: 0; }
+}
