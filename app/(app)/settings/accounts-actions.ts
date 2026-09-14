@@ -359,26 +359,51 @@ export async function createAccount(
     .where(eq(users.email, email));
   if (dup) return { ok: false, error: `มีบัญชีอีเมล “${email}” อยู่แล้ว` };
 
-  // Better Auth admin plugin: hashes the password the way sign-in expects and
-  // applies the role in one call.
-  const created = await auth.api.createUser({
-    // The cast is to BETTER AUTH's own role union — the registry declared in
-    // lib/auth/index.ts, which knows only "superadmin". It has nothing to do
-    // with our role ids: `role` here is a roles.id and is written to
-    // users.role verbatim, whatever it is. Any member of that union
-    // type-checks; the value is never actually one of them.
-    body: { email, password: input.password, name, role: role as "superadmin" },
-    headers: await headers(),
-  });
+  // Better Auth admin plugin, used for ONE thing: hashing the password the way
+  // sign-in expects. The role is deliberately NOT passed.
+  //
+  // `role` here is a roles.id — our vocabulary, editable data in the roles
+  // table. Better Auth's admin plugin validates the `role` in this body
+  // against ITS OWN registry (the `roles` option in lib/auth/index.ts, which
+  // holds "superadmin" and nothing else, because that is the only role its
+  // account-management endpoints answer to) and throws BAD_REQUEST "not
+  // allowed to set a non-existent role value" for anything else. Passing a
+  // roles.id through here meant every ordinary account — เซลส์, ผู้จัดการ,
+  // บัญชี — failed to create, and would fail again the day somebody adds a
+  // custom role at /settings/roles.
+  //
+  // Widening that registry is not the fix: hasPermission() reads it, so
+  // registering our roles there with admin grants would let any signed-in
+  // user call POST /api/auth/admin/create-user. The two vocabularies stay
+  // separate, exactly as role CHANGES already do (setAccountRole below, and
+  // scripts/create-user.ts, both write users.role directly).
+  let created;
+  try {
+    created = await auth.api.createUser({
+      body: { email, password: input.password, name },
+      headers: await headers(),
+    });
+  } catch (e) {
+    // Anything Better Auth rejects belongs in the form, not in the app's error
+    // boundary — a thrown server action replaces the whole tab and loses what
+    // was typed.
+    console.error("[settings] createUser failed:", e);
+    return { ok: false, error: "สร้างบัญชีไม่สำเร็จ ลองใหม่อีกครั้ง" };
+  }
   const id = created?.user?.id;
   if (!id) return { ok: false, error: "สร้างบัญชีไม่สำเร็จ" };
 
-  // nickname is NOT passed through createUser's `data`: the drizzle adapter
-  // only maps fields declared in user.additionalFields and drops the rest
-  // silently. It matters — the LINE bot resolves by nickname first.
-  if (nickname) {
-    await db.update(users).set({ nickname }).where(eq(users.id, id));
-  }
+  // The account lands on the plugin's defaultRole; this is what actually
+  // applies the chosen one. `role` was matched against the roles table above,
+  // so it is never unvalidated input.
+  //
+  // nickname rides along rather than through createUser's `data`: the drizzle
+  // adapter only maps fields declared in user.additionalFields and drops the
+  // rest silently. It matters — the LINE bot resolves by nickname first.
+  await db
+    .update(users)
+    .set(nickname ? { role, nickname } : { role })
+    .where(eq(users.id, id));
 
   refresh(id);
   return { ok: true, id };
